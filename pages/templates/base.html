@@ -1,0 +1,17 @@
+{% load django_bootstrap5 %}
+
+<!doctype html>
+<html lang="en">
+<head>
+    {% bootstrap_css %}
+    {% bootstrap_javascript %}
+    <!-- ... other head elements ... -->
+</head>
+<body>
+    <!-- Your content here -->
+    <div class="container">
+        {% block content %}
+        {% endblock %}
+    </div>
+</body>
+</html>
