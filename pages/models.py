@@ -1,4 +1,5 @@
 import datetime
+from django.conf import settings
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
@@ -25,6 +26,9 @@ def validate_pin_length(value):
     if len(str(value)) != 6:
         raise ValidationError('Pin code should be exactly 6 digits.')
     
+# Define Models
+
+
 class BaseModel(models.Model):
     created_on = models.DateTimeField(default=timezone.now)
     modified_on = models.DateTimeField(auto_now=True)
@@ -41,7 +45,11 @@ class BaseModel(models.Model):
     def was_created_recently(self):
         return self.created_on >= timezone.now() - datetime.timedelta(days=1)
 
-# Contact models
+# Profile model
+class Profile(BaseModel):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+
+# Contact model
 class Contact(BaseModel):
     TITLE_CHOICES=CHOICES['titles']
     GENDER_CHOICES=CHOICES['genders']

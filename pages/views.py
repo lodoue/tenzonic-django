@@ -67,7 +67,16 @@ def contact_detail(request, contact_id):
 
 def deleteall_contact(request):
     if request.method == "POST":
-        print(request.POST)
+        contact_ids = request.POST.getlist('contact_ids')
+
+        if(len(contact_ids) > 0):
+            # Filter the QuerySet to include only the selected IDs and delete them
+            deleted_count, _ = Contact.objects.filter(id__in=contact_ids).delete()
+
+            messages.success(request, f"{deleted_count} contact(s) deleted successfully.")
+        else:
+            messages.error(request, 'Must select atleast 1 contact to delete.')
+
     return redirect('pages:listContactus')
 
 
