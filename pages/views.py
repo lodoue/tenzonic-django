@@ -5,20 +5,33 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.views import generic
 from .forms import ContactForm # Import your form class
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .models import Contact
 
-# Create your views here.
-def say_hello(request):
-    return render(request, "hello.html")
-
 # Listing all contactus created
-def contact_index(request):
-    # Retrieve all contacts
-    all_contacts = Contact.objects.all().order_by('-modified_on')
-    return render(request, "list.html", {"contacts": all_contacts, "tags": {'error':'danger','success':'success'}})
+def contact_index(request, page=None, count=None):
+    # Retrieve all contacts order by modified_on in descending order
+    queryset = Contact.objects.all().order_by('-modified_on')
+
+    paginator = Paginator(queryset, count)
+
+    try:
+        # Get the Page object for the requested page number
+        page_obj = paginator.page(page)
+    except PageNotAnInteger:
+        # If page is not an integer, deliver first page.
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        # If page is out of range (e.g. 9999), deliver last page.
+        page_obj = paginator.page(paginator.num_pages)
+
+    # return render(request, "index.html", {"contacts": all_contacts, "tags": {'error':'danger','success':'success'}})
+    # Pass the page object to the template context
+    # print(page_obj.object_list)
+    return render(request, 'index.html', {'page_obj': page_obj})
 
 # Creating new contactus
-def contact_form(request):
+def contact_create(request):
     # if this is a POST request we need to process the form data
     if request.method == "POST":
         # create a form instance and populate it with data from the request:
@@ -37,9 +50,10 @@ def contact_form(request):
     else:
         form = ContactForm()
 
-    return render(request, "contact_form.html", {"form": form})
+    return render(request, "create.html", {"form": form})
 
-def contact_detail(request, contact_id):
+# For showing edit form or updating form data
+def contact_edit(request, contact_id):
     try:
         instance = get_object_or_404(Contact, pk=contact_id)
     except:
@@ -59,37 +73,54 @@ def contact_detail(request, contact_id):
                 return redirect('pages:listContactus')
             else:
                 messages.error(request, 'Error while updating contact.') 
-                return render(request, "contact_form.html", {"form": form,"alert":"Error while updating contact."})
+                return render(request, "edit.html", {"form": form,"alert":"Error while updating contact."})
         else:
             form = ContactForm(instance=instance)
-            return render(request, "contact_form.html", {"form": form})
+            return render(request, "edit.html", {"form": form})
 
-
-def deleteall_contact(request):
+# For deleting one or more contact data
+def delete_contact(request, contact_id=None):
     if request.method == "POST":
         contact_ids = request.POST.getlist('contact_ids')
 
-        if(len(contact_ids) > 0):
+        if(contact_ids is not None and len(contact_ids) > 0):
             # Filter the QuerySet to include only the selected IDs and delete them
             deleted_count, _ = Contact.objects.filter(id__in=contact_ids).delete()
 
             messages.success(request, f"{deleted_count} contact(s) deleted successfully.")
         else:
             messages.error(request, 'Must select atleast 1 contact to delete.')
+    
+    elif contact_id is not None:
+        try:
+            # Retrieve the object
+            contact = Contact.objects.get(pk=contact_id)
+            # Delete the object
+            contact.delete()
+            messages.success(request, 'Contact deleted successfully!') # Redirect or display success
+
+        except Contact.DoesNotExist:
+            messages.error(request, 'No such Contact exist!') # Redirect or display success
+
+    else:
+        messages.error(request, 'Kindly select 1 or more contact to delete.')
 
     return redirect('pages:listContactus')
 
+# def deleteall_contact(request):
+#     if request.method == "POST":
+#         contact_ids = request.POST.getlist('contact_ids')
 
-def delete_contact(request, contact_id):
-    try:
-        # Retrieve the object
-        contact = Contact.objects.get(pk=contact_id)
-        # Delete the object
-        contact.delete()
-        messages.success(request, 'Contact deleted successfully!') # Redirect or display success
+#         if(len(contact_ids) > 0):
+#             # Filter the QuerySet to include only the selected IDs and delete them
+#             deleted_count, _ = Contact.objects.filter(id__in=contact_ids).delete()
 
-    except Contact.DoesNotExist:
-        messages.error(request, 'No such Contact found!') # Redirect or display success
+#             messages.success(request, f"{deleted_count} contact(s) deleted successfully.")
+#         else:
+#             messages.error(request, 'Must select atleast 1 contact to delete.')
 
-    return redirect('pages:listContactus')
+#     return redirect('pages:listContactus')
+
+
+
     

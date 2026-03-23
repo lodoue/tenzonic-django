@@ -1,85 +1,62 @@
-{% extends 'base.html' %}
+<table class="table table-hover table-striped">
+    <thead>
+        <tr>
+            <!-- Checkbox column header -->
+            <th scope="col">
+                <input class="form-check-input" type="checkbox" id="selectAll" onclick="toggleAll(this)">
+            </th>
+            <th scope="col">#</th>
+            <th scope="col">Name</th>
+            <th scope="col">Email</th>
+            <th scope="col">Mobile</th>
+            <th scope="col">Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for contact in page_obj.object_list %}
+        <tr>
+            <td>
+                <input name="contact_ids" class="form-check-input contact-checkbox" value="{{ contact.id }}" type="checkbox" id="contact{{ contact.id }}">
+            </td>
+            <th scope="row">{{ contact.id }}</th>
+            <td class="text-capitalize">{{ contact.title }}. {{ contact.firstname }} {{ contact.lastname }}</td>
+            <td><a href="mailto:{{ contact.email }}">{{ contact.email }}</a></td>
+            <td>{{ contact.mobile }}
+            <td>
+                <!-- Edit Button -->
+                <a class="btn btn-outline-secondary btn-sm me-2" href="{% url 'pages:contactEdit' contact.id %}">
+                    Edit
+                </a>
+                <!-- Delete Button -->
+                <a class="btn btn-outline-danger btn-sm" href="{% url 'pages:deleteContact' contact.id %}" onclick="return confirm('Are you sure you want to proceed?');">
+                    Delete
+                </a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
 
-{% load django_bootstrap5 %}
-
-{% block content %}
-<form action="{% url 'pages:deleteAllContact' %}" method="post">
-    {% csrf_token %}
-    
-    <div class="d-flex justify-content-between align-items-center mb-2 p-3">
-        <h3 class="mb-0">Contact Us</h3>
-        <div>
-            <a class="btn btn-primary" href="{% url 'pages:createContact' %}">Create New</a>
-            {% bootstrap_button button_type="submit" content="Delete" onclick="return confirm('Are you sure you want to proceed?');" %}
-        </div>
-    </div>
-
-    {% include "alert.html" %}
-    
-    <table class="table table-hover table-striped">
-        <thead>
-            <tr>
-                <!-- Checkbox column header -->
-                <th scope="col">
-                    <input class="form-check-input" type="checkbox" id="selectAll" onclick="toggleAll(this)">
-                </th>
-                <th scope="col">#</th>
-                <th scope="col">Name</th>
-                <th scope="col">Email</th>
-                <th scope="col">Mobile</th>
-                <th scope="col">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for contact in contacts %}
-            <tr>
-                <td>
-                    <input name="contact_ids" class="form-check-input contact-checkbox" value="{{ contact.id }}" type="checkbox" id="contact{{ contact.id }}">
-                </td>
-                <th scope="row">{{ contact.id }}</th>
-                <td class="text-capitalize">{{ contact.title }}. {{ contact.firstname }} {{ contact.lastname }}</td>
-                <td><a href="mailto:{{ contact.email }}">{{ contact.email }}</a></td>
-                <td>{{ contact.mobile }}
-                <td>
-                    <!-- Edit Button -->
-                    <a class="btn btn-outline-secondary btn-sm me-2" href="{% url 'pages:contactDetail' contact.id %}">
-                        Edit
-                    </a>
-                    <!-- Delete Button -->
-                    <a class="btn btn-outline-danger btn-sm" href="{% url 'pages:deleteContact' contact.id %}" onclick="return confirm('Are you sure you want to proceed?');">
-                        Delete
-                    </a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-    <nav aria-label="Page navigation example">
-        <ul class="pagination justify-content-end">
-            <li class="page-item disabled">
-                <a class="page-link" href="#" tabindex="-1">Previous</a>
-            </li>
-            <li class="page-item"><a class="page-link" href="#">1</a></li>
-            <li class="page-item"><a class="page-link" href="#">2</a></li>
-            <li class="page-item"><a class="page-link" href="#">3</a></li>
+<nav aria-label="Page navigation example">
+    <ul class="pagination justify-content-end">
+        {% if page_obj.has_previous %}
             <li class="page-item">
-                <a class="page-link" href="#">Next</a>
-            </li>
-        </ul>
-    </nav>
-</form>
+        {% else %}
+            <li class="page-item disabled">
+        {% endif %}
+            <a class="page-link" href="#" tabindex="-1">Previous</a>
+        </li>
 
-<script type="text/javascript">
-    function toggleAll(source) {
-        // Use querySelectorAll to get all checkboxes with the specific class name
-        checkboxes = document.querySelectorAll('.contact-checkbox');
-        
-        // Loop through the list and set their checked property to the master's checked property
-        for (var i = 0; i < checkboxes.length; i++) {
-            checkboxes[i].checked = source.checked;
-        }
-    }
-</script>
+        {% for page in range(page_obj.paginator.num_pages) %}
+            <li class="page-item"><a class="page-link" href="{% url 'pages:listContactus' page 1 %}">1</a></li>
+        {% endfor %}
 
-{% endblock %}
+        {% if page_obj.has_next %}
+            <li class="page-item">
+        {% else %}
+            <li class="page-item disabled">
+        {% endif %}
+            <a class="page-link" href="#" tabindex="-1">Next</a>
+        </li>
+    </ul>
+</nav>
