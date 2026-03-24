@@ -6,21 +6,21 @@ from django.core.validators import RegexValidator
 from django.utils import timezone
 
 # Define title choices
-CHOICES = {
-    'titles': (
-        ('mr', 'Mr.'),
-        ('mrs', 'Mrs.'),
-        ('ms', 'Ms.'),
-        ('miss', 'Miss'),
-        ('dr', 'Dr.')
-    ),
-    'genders': (
-        ('M', 'Male'),
-        ('F', 'Female'),
-        ('O', 'Other'),
-        ('P', 'Prefer not to say'),
-    )
-}
+TITLE_CHOICES = (
+    ('mr', 'Mr.'),
+    ('mrs', 'Mrs.'),
+    ('ms', 'Ms.'),
+    ('miss', 'Miss'),
+    ('dr', 'Dr.')
+)
+
+# Define gender choices
+GENDER_CHOICES = (
+    ('M', 'Male'),
+    ('F', 'Female'),
+    ('O', 'Other'),
+    ('P', 'Prefer not to say'),
+)
 
 def validate_pin_length(value):
     if len(str(value)) != 6:
@@ -50,11 +50,9 @@ class Profile(BaseModel):
 
 # Contact model
 class Contact(BaseModel):
-    TITLE_CHOICES=CHOICES['titles']
-    GENDER_CHOICES=CHOICES['genders']
-
     title = models.CharField(
         max_length=5,
+        choices=TITLE_CHOICES
     )
     firstname = models.CharField(
         max_length=10,
@@ -72,11 +70,13 @@ class Contact(BaseModel):
     )
     email = models.EmailField(
         # default='tenzin@test.com',
+        unique=True,
         help_text='Enter your email'
     )
     mobile = models.CharField(
         max_length=10,
         validators=[RegexValidator(regex=r'^\d{10}$')],
+        unique=True,
         help_text='Enter your 10 digit mobile number'
     )
     subject = models.CharField(
@@ -84,7 +84,6 @@ class Contact(BaseModel):
         default='Dummy Subjects', # Set a default value if needed
     )
     message = models.CharField()
-    
     pin = models.PositiveIntegerField(
         validators=[validate_pin_length],
         help_text='Enter 6 digit pin code'

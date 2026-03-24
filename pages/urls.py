@@ -14,6 +14,7 @@ urlpatterns = [
     path("contactus/delete", views.delete_contact, name="deleteContact"),
     # To delete specific contact by its ID
     path("contactus/delete/<int:contact_id>", views.delete_contact, name="deleteContact"),
+    path("contactus/seed/<int:rec_num>", views.seed_contact, name="seedContact"),
     # path("contactus/delete", views.deleteall_contact, name="deleteAllContact"),
     # path("<int:pk>/", views.DetailView.as_view(), name="detail"),
     # path("<int:pk>/results/", views.ResultsView.as_view(), name="results"),

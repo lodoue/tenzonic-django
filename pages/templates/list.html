@@ -1,3 +1,8 @@
+<div class="row">
+    <div class="col-md-12 mt-3 mb-2">
+      <p>Showing: <span id="recordCount">{{ list_obj.number }}-{{ rec_count }} of {{ list_obj.paginator.count }} records</span></p>
+    </div>
+  </div>
 <table class="table table-hover table-striped">
     <thead>
         <tr>
@@ -7,6 +12,7 @@
             </th>
             <th scope="col">#</th>
             <th scope="col">Name</th>
+            <th scope="col">Gender</th>
             <th scope="col">Email</th>
             <th scope="col">Mobile</th>
             <th scope="col">Actions</th>
@@ -15,7 +21,7 @@
     <tbody>
         {% if not list_obj %}
             <tr>
-                <td colspan="6" class="text-center">No record found</td>
+                <td colspan="7" class="text-center">No record found</td>
             </tr>
         {% else %}
             {% for contact in list_obj.object_list %}
@@ -25,6 +31,7 @@
                 </td>
                 <th scope="row">{{ contact.id }}</th>
                 <td class="text-capitalize">{{ contact.title }}. {{ contact.firstname }} {{ contact.lastname }}</td>
+                <td>{{ contact.get_gender_display }}</td>
                 <td><a href="mailto:{{ contact.email }}">{{ contact.email }}</a></td>
                 <td>{{ contact.mobile }}
                 <td>

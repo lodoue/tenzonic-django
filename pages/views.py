@@ -6,7 +6,8 @@ from django.urls import reverse
 from django.views import generic
 from .forms import ContactForm # Import your form class
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from .models import Contact
+from .models import Contact, TITLE_CHOICES, GENDER_CHOICES
+from faker import Faker
 
 # Listing all contactus created
 def contact_index(request, page=None, count=None):
@@ -29,12 +30,12 @@ def contact_index(request, page=None, count=None):
         except EmptyPage:
             # If page is out of range (e.g. 9999), deliver last page.
             list_obj = paginator.page(paginator.num_pages)
-
     else:
         print("Queryset is empty")
         list_obj = None
+    print(list_obj.number, len(list_obj.object_list))
     # Pass the page object to the template context
-    return render(request, "index.html", {"list_obj": list_obj, "count": count, "tags": {'error':'danger','success':'success'}})
+    return render(request, "index.html", {"list_obj": list_obj, "rec_count": list_obj.number*len(list_obj.object_list), "tags": {'error':'danger','success':'success'}})
 
 # Creating new contactus
 def contact_create(request):
@@ -112,6 +113,28 @@ def delete_contact(request, contact_id=None):
         messages.error(request, 'Kindly select 1 or more contact to delete.')
 
     return redirect('pages:listContactus')
+
+def seed_contact(request, rec_num=1):
+    # Truncate table before creating
+    Contact.objects.all().delete()
+
+    # Example in a script or shell
+    fake = Faker()
+    for _ in range(rec_num):
+        Contact.objects.create(
+            # title=fake.prefix(), 
+            title=fake.random_element(elements=[choice[0] for choice in TITLE_CHOICES]),
+            firstname=fake.first_name(),
+            lastname=fake.last_name(),
+            gender=fake.random_element(elements=[choice[0] for choice in GENDER_CHOICES]),
+            email=fake.email(),
+            mobile=fake.numerify('##########'),
+            subject=fake.sentence(),
+            message=fake.text(),
+            pin=fake.numerify('######')
+        )
+
+    return HttpResponse(f"Seeded {rec_num} contact(s) successfully!")
 
 # def deleteall_contact(request):
 #     if request.method == "POST":

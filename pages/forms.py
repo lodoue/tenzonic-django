@@ -1,7 +1,7 @@
 # In forms.py (for a ModelForm)
 from django import forms
 # from django.forms import Form, ModelForm, ChoiceField, Select, TextInput, Textarea, RadioSelect, EmailInput, ValidationError
-from .models import Contact
+from .models import Contact, TITLE_CHOICES, GENDER_CHOICES
 
 # Class ContactForm
 class ContactForm(forms.ModelForm):
@@ -9,10 +9,10 @@ class ContactForm(forms.ModelForm):
         model = Contact
         fields = ('title', 'firstname', 'lastname', 'gender', 'email', 'mobile', 'subject', 'message', 'pin')
         widgets = {
-            'title': forms.Select(choices=Contact.TITLE_CHOICES),
+            'title': forms.Select(choices=TITLE_CHOICES),
             'firstname': forms.TextInput,
             'lastname': forms.TextInput,
-            'gender': forms.RadioSelect(choices=Contact.GENDER_CHOICES),
+            'gender': forms.RadioSelect(choices=GENDER_CHOICES),
             'email': forms.EmailInput,
             'mobile': forms.TextInput,
             'subject': forms.TextInput,
