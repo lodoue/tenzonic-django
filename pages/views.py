@@ -13,22 +13,28 @@ def contact_index(request, page=None, count=None):
     # Retrieve all contacts order by modified_on in descending order
     queryset = Contact.objects.all().order_by('-modified_on')
 
-    paginator = Paginator(queryset, count)
+    if queryset:
+        # Change count to total records if not set
+        if(count is None):
+            count = len(queryset)
 
-    try:
-        # Get the Page object for the requested page number
-        page_obj = paginator.page(page)
-    except PageNotAnInteger:
-        # If page is not an integer, deliver first page.
-        page_obj = paginator.page(1)
-    except EmptyPage:
-        # If page is out of range (e.g. 9999), deliver last page.
-        page_obj = paginator.page(paginator.num_pages)
+        paginator = Paginator(queryset, count)
 
-    # return render(request, "index.html", {"contacts": all_contacts, "tags": {'error':'danger','success':'success'}})
+        try:
+            # Get the Page object for the requested page number
+            list_obj = paginator.page(page)
+        except PageNotAnInteger:
+            # If page is not an integer, deliver first page.
+            list_obj = paginator.page(1)
+        except EmptyPage:
+            # If page is out of range (e.g. 9999), deliver last page.
+            list_obj = paginator.page(paginator.num_pages)
+
+    else:
+        print("Queryset is empty")
+        list_obj = None
     # Pass the page object to the template context
-    # print(page_obj.object_list)
-    return render(request, 'index.html', {'page_obj': page_obj})
+    return render(request, "index.html", {"list_obj": list_obj, "count": count, "tags": {'error':'danger','success':'success'}})
 
 # Creating new contactus
 def contact_create(request):

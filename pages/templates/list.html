@@ -13,50 +13,34 @@
         </tr>
     </thead>
     <tbody>
-        {% for contact in page_obj.object_list %}
-        <tr>
-            <td>
-                <input name="contact_ids" class="form-check-input contact-checkbox" value="{{ contact.id }}" type="checkbox" id="contact{{ contact.id }}">
-            </td>
-            <th scope="row">{{ contact.id }}</th>
-            <td class="text-capitalize">{{ contact.title }}. {{ contact.firstname }} {{ contact.lastname }}</td>
-            <td><a href="mailto:{{ contact.email }}">{{ contact.email }}</a></td>
-            <td>{{ contact.mobile }}
-            <td>
-                <!-- Edit Button -->
-                <a class="btn btn-outline-secondary btn-sm me-2" href="{% url 'pages:contactEdit' contact.id %}">
-                    Edit
-                </a>
-                <!-- Delete Button -->
-                <a class="btn btn-outline-danger btn-sm" href="{% url 'pages:deleteContact' contact.id %}" onclick="return confirm('Are you sure you want to proceed?');">
-                    Delete
-                </a>
-            </td>
-        </tr>
-        {% endfor %}
+        {% if not list_obj %}
+            <tr>
+                <td colspan="6" class="text-center">No record found</td>
+            </tr>
+        {% else %}
+            {% for contact in list_obj.object_list %}
+            <tr>
+                <td>
+                    <input name="contact_ids" class="form-check-input contact-checkbox" value="{{ contact.id }}" type="checkbox" id="contact{{ contact.id }}">
+                </td>
+                <th scope="row">{{ contact.id }}</th>
+                <td class="text-capitalize">{{ contact.title }}. {{ contact.firstname }} {{ contact.lastname }}</td>
+                <td><a href="mailto:{{ contact.email }}">{{ contact.email }}</a></td>
+                <td>{{ contact.mobile }}
+                <td>
+                    <!-- Edit Button -->
+                    <a class="btn btn-outline-secondary btn-sm me-2" href="{% url 'pages:contactEdit' contact.id %}">
+                        Edit
+                    </a>
+                    <!-- Delete Button -->
+                    <a class="btn btn-outline-danger btn-sm" href="{% url 'pages:deleteContact' contact.id %}" onclick="return confirm('Are you sure you want to proceed?');">
+                        Delete
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        {% endif %}
     </tbody>
 </table>
 
-<nav aria-label="Page navigation example">
-    <ul class="pagination justify-content-end">
-        {% if page_obj.has_previous %}
-            <li class="page-item">
-        {% else %}
-            <li class="page-item disabled">
-        {% endif %}
-            <a class="page-link" href="#" tabindex="-1">Previous</a>
-        </li>
-
-        {% for page in range(page_obj.paginator.num_pages) %}
-            <li class="page-item"><a class="page-link" href="{% url 'pages:listContactus' page 1 %}">1</a></li>
-        {% endfor %}
-
-        {% if page_obj.has_next %}
-            <li class="page-item">
-        {% else %}
-            <li class="page-item disabled">
-        {% endif %}
-            <a class="page-link" href="#" tabindex="-1">Next</a>
-        </li>
-    </ul>
-</nav>
+{% include 'pagination.html' %}

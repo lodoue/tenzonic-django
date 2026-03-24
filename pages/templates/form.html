@@ -5,6 +5,16 @@
 
     {% bootstrap_form form %}
 
-    {% bootstrap_button button_type="submit" content="Submit" %}
-    {% bootstrap_button button_type="reset" content="Reset" %}
+    {% bootstrap_button button_type="submit" content="Submit <span>&check;</span>" %}
+    {% bootstrap_button button_type="reset" content="Reset <span>&#8635;</span>" %}
+    {% bootstrap_button button_type="button" content="Cancel <span>&times;</span>" onclick="cancelForm()" %}
 </form>
+
+<script type="text/javascript">
+    function cancelForm() {
+        if(confirm('Are you sure you want to Cancel?')) {
+            window.history.back();
+            //window.location="{% url 'pages:listContactus' %}";
+        }
+    }
+</script>

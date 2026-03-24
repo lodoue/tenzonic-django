@@ -26,10 +26,9 @@ def validate_pin_length(value):
     if len(str(value)) != 6:
         raise ValidationError('Pin code should be exactly 6 digits.')
     
-# Define Models
-
-
+# Define Parent Model
 class BaseModel(models.Model):
+    # Below fields will be automatically added to Models which are derived from this model
     created_on = models.DateTimeField(default=timezone.now)
     modified_on = models.DateTimeField(auto_now=True)
     # Add any other common fields here
