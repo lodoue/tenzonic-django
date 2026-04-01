@@ -33,7 +33,7 @@ def contact_index(request, page=None, count=None):
     else:
         print("Queryset is empty")
         list_obj = None
-    print(list_obj.number, len(list_obj.object_list))
+
     # Pass the page object to the template context
     return render(request, "index.html", {"list_obj": list_obj, "rec_count": list_obj.number*len(list_obj.object_list), "tags": {'error':'danger','success':'success'}})
 
@@ -59,6 +59,20 @@ def contact_create(request):
 
     return render(request, "create.html", {"form": form})
 
+# For viewing contact by its ID
+def contact_view(request, contact_id):
+    try:
+        contact = get_object_or_404(Contact, pk=contact_id)
+    except:
+        messages.error(request, 'No such contact found.') 
+    else:
+        label_title = dict(TITLE_CHOICES)
+        contact.title = label_title.get(contact.title, "Unknown Title")
+        
+        label_gender = dict(GENDER_CHOICES)
+        contact.gender = label_gender.get(contact.gender, "Unknown Gender")
+        return render(request, "view.html", {"contact": contact, "model_name": contact._meta.verbose_name })
+        
 # For showing edit form or updating form data
 def contact_edit(request, contact_id):
     try:

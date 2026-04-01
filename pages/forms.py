@@ -18,6 +18,7 @@ class ContactForm(forms.ModelForm):
             'subject': forms.TextInput,
             'message': forms.Textarea(attrs={'rows': 3, 'cols': 10}),
         }
+        # exclude = ('field_to_remove',)
    
 
     # # Validating all input fields data

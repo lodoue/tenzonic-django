@@ -1,3 +1,5 @@
+{% load qr_code %}
+
 <div class="row">
     <div class="col-md-12 mt-3 mb-2">
       <p>Showing: <span id="recordCount">{{ list_obj.number }}-{{ rec_count }} of {{ list_obj.paginator.count }} records</span></p>
@@ -33,8 +35,12 @@
                 <td class="text-capitalize">{{ contact.title }}. {{ contact.firstname }} {{ contact.lastname }}</td>
                 <td>{{ contact.get_gender_display }}</td>
                 <td><a href="mailto:{{ contact.email }}">{{ contact.email }}</a></td>
-                <td>{{ contact.mobile }}
+                <td>{{ contact.mobile }}</td>
                 <td>
+                    <!-- View Button -->
+                    <a class="btn btn-outline-secondary btn-sm me-2" href="{% url 'pages:contactView' contact.id %}">
+                        View
+                    </a>
                     <!-- Edit Button -->
                     <a class="btn btn-outline-secondary btn-sm me-2" href="{% url 'pages:contactEdit' contact.id %}">
                         Edit
@@ -43,6 +49,8 @@
                     <a class="btn btn-outline-danger btn-sm" href="{% url 'pages:deleteContact' contact.id %}" onclick="return confirm('Are you sure you want to proceed?');">
                         Delete
                     </a>
+                    <!-- Tiny Small Medium Large Huge -->
+                    {% qr_from_text contact.email size="S" %}
                 </td>
             </tr>
             {% endfor %}
