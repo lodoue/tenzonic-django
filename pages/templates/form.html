@@ -3,11 +3,26 @@
 <form action="" method="post" class="form">
     {% csrf_token %}
 
-    {% bootstrap_form form %}
+    <div class="row justify-content-center">
+        <div class="col-lg-7 col-md-9 col-sm-12">
 
-    {% bootstrap_button button_type="submit" content="Submit <span>&check;</span>" %}
-    {% bootstrap_button button_type="reset" content="Reset <span>&#8635;</span>" %}
-    {% bootstrap_button button_type="button" content="Cancel <span>&times;</span>" onclick="cancelForm()" %}
+            <div class="card shadow border-0 rounded-4">
+                <div class="card-header bg-primary text-white text-center py-3 rounded-top-4">
+                    <h3 class="mb-0">Contact</h3>
+                </div>
+
+                <div class="card-body p-4">
+                    {% bootstrap_form form %}
+                </div>
+
+                <div class="card-footer bg-white text-center py-3">
+                    {% bootstrap_button button_type="submit" content="Submit <span>&check;</span>" %}
+                    {% bootstrap_button button_type="reset" content="Reset <span>&#8635;</span>" %}
+                    {% bootstrap_button button_type="button" content="Cancel <span>&times;</span>" onclick="cancelForm()" %}
+                </div>
+            </div>
+        </div>
+    </div>
 </form>
 
 <script type="text/javascript">

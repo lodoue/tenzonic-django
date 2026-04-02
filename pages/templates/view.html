@@ -5,16 +5,32 @@
 
     {% include "alert.html" %}
 
-    <h3>{{ model_name }}</h3>
+    <div class="row justify-content-center">
+        <div class="col-lg-7 col-md-9 col-sm-12">
 
-    {% for name, value in contact.get_fields %}
-        <p><b>{{ name }}:</b> {{ value }}</p>
-    {% endfor %}
+            <div class="card shadow border-0 rounded-4">
+                <div class="card-header bg-primary text-white text-center py-3 rounded-top-4">
+                    <h3 class="mb-0">{{ contact.get_model_name }}</h3>
+                </div>
 
-    {% qr_from_text contact.email size="M" %}
+                <div class="card-body p-4">
+                    {% for name, value in contact.get_fields %}
+                        <div class="row mb-3 border-bottom pb-2">
+                            <div class="col-5 fw-bold">{{ name }}</div>
+                            <div class="col-7 text-muted">{{ value }}</div>
+                        </div>
+                    {% endfor %}
+                    
+                    {% qr_from_text contact.email size="M" %}
+                </div>
 
-    <a href="{% url 'pages:listContactus' %}" class="btn btn-primary">Go to List</a>
-    <a href="{% url 'pages:contactEdit' contact.id %}" class="btn btn-primary">Edit</a>
-    <a href="{% url 'pages:deleteContact' contact.id %}" class="btn btn-danger" onclick="return confirm('Are you sure you want to proceed?');">Delete</a>
+                <div class="card-footer bg-white text-center py-3">
+                    <a href="{% url 'pages:listContactus' %}" class="btn btn-primary px-4 me-2">Go to List</a>
+                    <a href="{% url 'pages:contactEdit' contact.id %}" class="btn btn-success px-4 me-2">Edit</a>
+                    <a href="{% url 'pages:deleteContact' contact.id %}" class="btn btn-danger px-4" onclick="return confirm('Are you sure you want to proceed?');">Delete</a>
+                </div>
+            </div>
+        </div>
+    </div>
 
 {% endblock %}

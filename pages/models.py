@@ -45,12 +45,24 @@ class BaseModel(models.Model):
     def was_created_recently(self):
         return self.created_on >= timezone.now() - datetime.timedelta(days=1)
     
+    # Returns a list of (field_name, field_value) tuples
     def get_fields(self):
-        # Returns a list of (field_name, field_value) tuples
-        return [(field.verbose_name, getattr(self, field.name)) for field in self._meta.fields]
+        # Check if method name 'exclude_fields' exist and its executable
+        if hasattr(self, 'exclude_fields') and callable(getattr(self, 'exclude_fields')):
+            # Returns field_names excluding field name returned by exclude_fields() method
+            return [(field.verbose_name, getattr(self, field.name)) for field in self._meta.fields if field.name not in self.exclude_fields()]
+        else:
+            return [(field.verbose_name, getattr(self, field.name)) for field in self._meta.fields]
+    
+    def get_model_name(self):
+        return self._meta.verbose_name
 
 # Profile model
 class Profile(BaseModel):
+    class Meta:
+        verbose_name = "Profile"
+        verbose_name_plural = "Profiles"
+
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     image = models.ImageField(default='default.jpg', upload_to='profile_pics')
     
@@ -59,7 +71,10 @@ class Profile(BaseModel):
 class Contact(BaseModel):
     class Meta:
         verbose_name = "Contact"
-        verbose_name_plural="Contacts"
+        verbose_name_plural = "Contacts"
+
+    def exclude_fields(self):
+        return ('id','title')
 
     title = models.CharField(
         max_length=5,
@@ -117,6 +132,10 @@ class Contact(BaseModel):
 
 # Review model
 class Review(BaseModel):
+    class Meta:
+        verbose_name = "Review"
+        verbose_name_plural = "Reviews"
+
     rated = models.PositiveIntegerField(),
     comment = models.CharField(),
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -124,6 +143,10 @@ class Review(BaseModel):
 
 # Blog model
 class Blog(BaseModel):
+    class Meta:
+        verbose_name = "Blog"
+        verbose_name_plural = "Blogs"
+
     title = models.CharField(
         max_length=5,
         choices=TITLE_CHOICES
