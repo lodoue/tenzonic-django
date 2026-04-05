@@ -1,5 +1,5 @@
 {% load django_bootstrap5 %}
-
+{% load static %}
 {% load qr_code %}
 
 <!doctype html>
@@ -8,6 +8,7 @@
     {% bootstrap_css %}
     {% bootstrap_javascript %}
     <!-- ... other head elements ... -->
+    <link rel="stylesheet" href="{% static 'style.css' %}">
 </head>
 <body>
     <!-- Your content here -->

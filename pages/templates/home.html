@@ -1,0 +1,30 @@
+{% load django_bootstrap5 %}
+{% load static %}
+{% load custom_tags %}
+{% load qr_code %}
+
+<!doctype html>
+<html lang="en">
+<head>
+    {% bootstrap_css %}
+    {% bootstrap_javascript %}
+    <!-- ... other head elements ... -->
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+</head>
+<body>
+    {% block content %}
+    <div class="menu-card">
+        <div class="menu-title">Main Menu</div>
+
+        <div class="list-group">
+            {% for mod in models %}
+            <div class="list-group-item">
+                <a href="{% url 'pages:listModel' mod 5 %}" class="text-capitalize">{{ mod }}</a>
+            </div>
+            {% endfor %}
+            
+        </div>
+    </div>
+    {% endblock %}
+</body>
+</html>

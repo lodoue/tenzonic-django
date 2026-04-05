@@ -1,7 +1,7 @@
 # In forms.py (for a ModelForm)
 from django import forms
 # from django.forms import Form, ModelForm, ChoiceField, Select, TextInput, Textarea, RadioSelect, EmailInput, ValidationError
-from .models import Contact, TITLE_CHOICES, GENDER_CHOICES
+from .models import Contact, Blog, Review, TITLE_CHOICES, GENDER_CHOICES
 
 # Class ContactForm
 class ContactForm(forms.ModelForm):
@@ -42,3 +42,26 @@ class ContactForm(forms.ModelForm):
     #     if 'Hello' not in subject:
     #         msg = f"'hello' not in {subject}."
     #         self.add_error("subject", msg)
+
+# Class BlogForm
+class BlogForm(forms.ModelForm):
+    class Meta:
+        model = Blog
+        fields = ('title', 'description', 'image', 'url')
+        widgets = {
+            'title': forms.TextInput,
+            'description': forms.Textarea(attrs={'rows': 3, 'cols': 10}),
+            'image': forms.FileInput,
+            'url': forms.TextInput
+        }
+
+# Class ReviewForm
+class ReviewForm(forms.ModelForm):
+    class Meta:
+        model = Review
+        fields = ('rated', 'comment', 'image')
+        widgets = {
+            'rated': forms.TextInput,
+            'comment': forms.Textarea(attrs={'rows': 3, 'cols': 10}),
+            'image': forms.FileInput
+        }

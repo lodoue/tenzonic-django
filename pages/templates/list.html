@@ -1,4 +1,6 @@
 {% load qr_code %}
+{% load custom_tags %}
+{% load static %}
 
 <div class="row">
     <div class="col-md-12 mt-3 mb-2">
@@ -13,10 +15,13 @@
                 <input class="form-check-input" type="checkbox" id="selectAll" onclick="toggleAll(this)">
             </th>
             <th scope="col">#</th>
-            <th scope="col">Name</th>
-            <th scope="col">Gender</th>
-            <th scope="col">Email</th>
-            <th scope="col">Mobile</th>
+            {% for name, value, verbose in fields %}
+                {% if model_name == 'contact' and name == 'title' %}
+                    <th scope="col">Name</th>
+                {% else %}
+                    <th scope="col">{{ verbose }}</th>
+                {% endif %}
+            {% endfor %}
             <th scope="col">Actions</th>
         </tr>
     </thead>
@@ -26,31 +31,36 @@
                 <td colspan="7" class="text-center">No record found</td>
             </tr>
         {% else %}
-            {% for contact in list_obj.object_list %}
+            {% for obj in list_obj.object_list %}
             <tr>
                 <td>
-                    <input name="contact_ids" class="form-check-input contact-checkbox" value="{{ contact.id }}" type="checkbox" id="contact{{ contact.id }}">
+                    <input name="rec_ids" class="form-check-input list-checkbox" value="{{ obj.id }}" type="checkbox" id="rec-{{ obj.id }}">
                 </td>
-                <th scope="row">{{ contact.id }}</th>
-                <td class="text-capitalize">{{ contact.title }}. {{ contact.firstname }} {{ contact.lastname }}</td>
-                <td>{{ contact.get_gender_display }}</td>
-                <td><a href="mailto:{{ contact.email }}">{{ contact.email }}</a></td>
-                <td>{{ contact.mobile }}</td>
+                <th class="scope-row">{{ obj.id }}</th>
+                {% for name, value, verbose in fields %}
+                    {% if name == 'gender' %}
+                        <td>{{ obj.get_gender_display }}</td>
+                    {% elif name == 'rated' %}
+                        <td>{% show_rating obj.rated %}</td>
+                    {% elif name == 'title' %}
+                        <td class="text-capitalize">{{ obj.title }}. {{ obj }}</td>
+                    {% elif name == 'email' %}
+                        <td><a href="mailto:{{ obj.email }}">{{ obj.email }}</a></td>
+                    {% else %}
+                        <td>{{ obj|get_obj_attr:name }}</td>
+                    {% endif %}
+                {% endfor %}
                 <td>
                     <!-- View Button -->
-                    <a class="btn btn-outline-secondary btn-sm me-2" href="{% url 'pages:contactView' contact.id %}">
-                        View
-                    </a>
+                    <a class="btn btn-outline-secondary btn-sm me-2" href="{% url 'pages:viewModel' model_name obj.id %}">View</a>
                     <!-- Edit Button -->
-                    <a class="btn btn-outline-secondary btn-sm me-2" href="{% url 'pages:contactEdit' contact.id %}">
-                        Edit
-                    </a>
+                    <a class="btn btn-outline-secondary btn-sm me-2" href="{% url 'pages:editModel' model_name obj.id %}">Edit</a>
                     <!-- Delete Button -->
-                    <a class="btn btn-outline-danger btn-sm" href="{% url 'pages:deleteContact' contact.id %}" onclick="return confirm('Are you sure you want to proceed?');">
-                        Delete
-                    </a>
+                    <a class="btn btn-outline-danger btn-sm" href="{% url 'pages:deleteModel' model_name obj.id %}" onclick="return confirm('Are you sure you want to proceed?');">Delete</a>
                     <!-- Tiny Small Medium Large Huge -->
-                    {% qr_from_text contact.email size="T" %}
+                    {% if unique_field %}
+                        {% qr_from_text obj|get_obj_attr:unique_field size="T" %}
+                    {% endif %}
                 </td>
             </tr>
             {% endfor %}

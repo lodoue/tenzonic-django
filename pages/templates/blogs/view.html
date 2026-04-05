@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% load qr_code %}
+
+{% block content %}
+
+    {% include "alert.html" %}
+
+    <div class="row justify-content-center">
+        <div class="col-lg-7 col-md-9 col-sm-12">
+
+            <div class="card shadow border-0 rounded-4">
+                <div class="card-header bg-primary text-white text-center py-3 rounded-top-4">
+                    <h3 class="mb-0">{{ blog.get_model_name }}</h3>
+                </div>
+
+                <div class="card-body p-4">
+                    {% for name, value in blog.get_fields %}
+                        <div class="row mb-3 border-bottom pb-2">
+                            <div class="col-5 fw-bold">{{ name }}</div>
+                            <div class="col-7 text-muted">{{ value }}</div>
+                        </div>
+                    {% endfor %}
+                    
+                    {% qr_from_text blog.url size="M" %}
+                </div>
+
+                <div class="card-footer bg-white text-center py-3">
+                    <a href="{% url 'pages:listBlogs' %}" class="btn btn-primary px-4 me-2">Go to List</a>
+                    <a href="{% url 'pages:blogEdit' blog.id %}" class="btn btn-success px-4 me-2">Edit</a>
+                    <a href="{% url 'pages:deleteBlog' blog.id %}" class="btn btn-danger px-4" onclick="return confirm('Are you sure you want to proceed?');">Delete</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

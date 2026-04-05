@@ -1,18 +1,30 @@
 from django.db.models import F
-from django.http import HttpResponseRedirect, HttpResponse
+from django.apps import apps
+from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
 from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.views import generic
-from .forms import ContactForm # Import your form class
+from .forms import ContactForm, BlogForm, ReviewForm # Import your form class
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from .models import Contact, TITLE_CHOICES, GENDER_CHOICES
+from django.core import serializers
+from .models import Contact, TITLE_CHOICES, GENDER_CHOICES, Blog
 from faker import Faker
 
-# Listing all contactus created
-def contact_index(request, page=None, count=None):
+# Define your app and model name as strings
+app_label = "pages"
+app_models = {"contact": {"name": "Contact", "form": ContactForm}, "blog": {"name": "Blog", "form": BlogForm}, "review": {"name": "Review", "form": ReviewForm}}
+
+def index(request):
+    # Pass the page object to the template context
+    return render(request, "home.html", {"models": app_models, "name":"name"})
+
+def list_model(request, model_name, page=None, count=None):
+    total_count = 0
+    # Retrieve model from passed model_name inside app_models
+    MyModel = apps.get_model(app_label, app_models[model_name]["name"])
     # Retrieve all contacts order by modified_on in descending order
-    queryset = Contact.objects.all().order_by('-modified_on')
+    queryset = MyModel.objects.all().order_by('-modified_on')
 
     if queryset:
         # Change count to total records if not set
@@ -30,140 +42,156 @@ def contact_index(request, page=None, count=None):
         except EmptyPage:
             # If page is out of range (e.g. 9999), deliver last page.
             list_obj = paginator.page(paginator.num_pages)
+        
+        total_count = list_obj.number*len(list_obj.object_list)
     else:
         print("Queryset is empty")
         list_obj = None
 
-    # Pass the page object to the template context
-    return render(request, "index.html", {"list_obj": list_obj, "rec_count": list_obj.number*len(list_obj.object_list), "tags": {'error':'danger','success':'success'}})
+    unique_field = None
+    unique_field_names = [field.name for field in MyModel._meta.get_fields() if field.name is not 'id' and getattr(field, 'unique', False)]
+    if len(unique_field_names) > 0:
+        unique_field = unique_field_names[0]
+    print(list(range(0, 5, 1)))
 
-# Creating new contactus
-def contact_create(request):
+    # Pass the page object to the template context
+    return render(request, "index.html", {"model_name": model_name, "fields": MyModel.get_fields(MyModel), "unique_field": unique_field, "list_template": "list.html", "module": MyModel._meta.verbose_name, "list_obj": list_obj, "rec_count": total_count, "tags": {'error':'danger','success':'success'}})
+
+# Creating new record
+def create_model(request, model_name):
     # if this is a POST request we need to process the form data
     if request.method == "POST":
         # create a form instance and populate it with data from the request:
-        form = ContactForm(request.POST)
+        form = app_models[model_name]["form"](request.POST)
         # check whether it's valid:
         if form.is_valid():
             # process the data in form.cleaned_data as required
             print(form.cleaned_data)
             form.save()
-            messages.success(request, 'Contact created successfully.')
-            return redirect('pages:listContactus')
+            messages.success(request, f"{app_models[model_name]['name']} created successfully.")
+            return redirect('pages:listModel', model_name)
         else:
-            messages.error(request, 'Something went wrong while creating new Contact.') 
+            messages.error(request, f"Something went wrong while creating new {app_models[model_name]['name']}.") 
 
     # if a GET (or any other method) we'll create a blank form
     else:
-        form = ContactForm()
+        form = app_models[model_name]["form"]()
 
-    return render(request, "create.html", {"form": form})
+    return render(request, "create.html", {"form": form, "module": app_models[model_name]['name']})
 
-# For viewing contact by its ID
-def contact_view(request, contact_id):
+# For viewing record by its ID
+def view_model(request, model_name, rec_id):
+    MyModel = apps.get_model(app_label, app_models[model_name]["name"])
     try:
-        contact = get_object_or_404(Contact, pk=contact_id)
+        record = get_object_or_404(MyModel, pk=rec_id)
     except:
-        messages.error(request, 'No such contact found.') 
+        messages.error(request, f"No such {app_models[model_name]['name']} found.") 
     else:
-        label_title = dict(TITLE_CHOICES)
-        contact.title = label_title.get(contact.title, "Unknown Title")
-        
-        label_gender = dict(GENDER_CHOICES)
-        contact.gender = label_gender.get(contact.gender, "Unknown Gender")
-        return render(request, "view.html", {"contact": contact, "model_name": contact._meta.verbose_name })
+        if model_name == 'contact':
+            label_title = dict(TITLE_CHOICES)
+            record.title = label_title.get(record.title, "Unknown Title")
+            
+            label_gender = dict(GENDER_CHOICES)
+            record.gender = label_gender.get(record.gender, "Unknown Gender")
+
+        unique_field_names = [field.name for field in MyModel._meta.get_fields() if field.name is not 'id' and getattr(field, 'unique', False)]
+        return render(request, "view.html", {"record": record, "model_name": model_name, "module": app_models[model_name]['name'], "fields": MyModel.get_fields(MyModel), "unique_field": unique_field_names[0] })
         
 # For showing edit form or updating form data
-def contact_edit(request, contact_id):
+def edit_model(request, model_name, rec_id):
+    MyModel = apps.get_model(app_label, app_models[model_name]["name"])
     try:
-        instance = get_object_or_404(Contact, pk=contact_id)
+        instance = get_object_or_404(MyModel, pk=rec_id)
     except:
-        messages.error(request, 'No such contact found.') 
+        messages.error(request, f"No such {model_name} found.")
+        return redirect('pages:listModel', model_name)
     else:
         # if this is a POST request we need to process the form data
         if request.method == "POST":
             # create a form instance and populate it with data from the request:
-            form = ContactForm(request.POST, instance=instance)
+            form = app_models[model_name]['form'](request.POST, instance=instance)
             # check whether it's valid:
             if form.is_valid():
                 # process the data in form.cleaned_data as required
                 print(form.cleaned_data)
                 form.save()
-                messages.success(request, 'Successfully updated contact.') 
+                messages.success(request, f"Successfully updated {model_name}.") 
                 
-                return redirect('pages:listContactus')
+                return redirect('pages:listModel', model_name)
             else:
-                messages.error(request, 'Error while updating contact.') 
-                return render(request, "edit.html", {"form": form,"alert":"Error while updating contact."})
+                messages.error(request, f"Error while updating {model_name}.") 
+                return render(request, "edit.html", {"form": form,"alert": f"Error while updating {model_name}.","module": app_models[model_name]['name']})
         else:
-            form = ContactForm(instance=instance)
-            return render(request, "edit.html", {"form": form})
+            form = app_models[model_name]['form'](instance=instance)
+        
+        return render(request, "edit.html", {"form": form, "model_name": model_name, "module": app_models[model_name]['name']})
 
-# For deleting one or more contact data
-def delete_contact(request, contact_id=None):
+# For deleting one or more data
+def delete_model(request, model_name, rec_id=None):
+    MyModel = apps.get_model(app_label, app_models[model_name]["name"])
     if request.method == "POST":
-        contact_ids = request.POST.getlist('contact_ids')
+        rec_ids = request.POST.getlist('rec_ids')
 
-        if(contact_ids is not None and len(contact_ids) > 0):
+        if(rec_ids is not None and len(rec_ids) > 0):
             # Filter the QuerySet to include only the selected IDs and delete them
-            deleted_count, _ = Contact.objects.filter(id__in=contact_ids).delete()
+            deleted_count, _ = MyModel.objects.filter(id__in=rec_ids).delete()
 
-            messages.success(request, f"{deleted_count} contact(s) deleted successfully.")
+            messages.success(request, f"{deleted_count} {model_name}(s) deleted successfully.")
         else:
-            messages.error(request, 'Must select atleast 1 contact to delete.')
+            messages.error(request, f"Must select atleast 1 {model_name} to delete.")
     
-    elif contact_id is not None:
+    elif rec_id is not None:
         try:
             # Retrieve the object
-            contact = Contact.objects.get(pk=contact_id)
+            record = MyModel.objects.get(pk=rec_id)
             # Delete the object
-            contact.delete()
-            messages.success(request, 'Contact deleted successfully!') # Redirect or display success
+            record.delete()
+            messages.success(request, f"{app_models[model_name]['name']} deleted successfully!") # Redirect or display success
 
-        except Contact.DoesNotExist:
-            messages.error(request, 'No such Contact exist!') # Redirect or display success
+        except MyModel.DoesNotExist:
+            messages.error(request, f"No such {app_models[model_name]['name']} exist!") # Redirect or display success
 
     else:
-        messages.error(request, 'Kindly select 1 or more contact to delete.')
+        messages.error(request, f"Kindly select 1 or more {model_name} to delete.")
 
-    return redirect('pages:listContactus')
+    return redirect('pages:listModel', model_name)
 
-def seed_contact(request, rec_num=1):
+def seed_model(request, model_name, rec_num=1):
+    MyModel = apps.get_model(app_label, app_models[model_name]["name"])
     # Truncate table before creating
-    Contact.objects.all().delete()
+    MyModel.objects.all().delete()
 
     # Example in a script or shell
     fake = Faker()
     for _ in range(rec_num):
-        Contact.objects.create(
-            # title=fake.prefix(), 
-            title=fake.random_element(elements=[choice[0] for choice in TITLE_CHOICES]),
-            firstname=fake.first_name(),
-            lastname=fake.last_name(),
-            gender=fake.random_element(elements=[choice[0] for choice in GENDER_CHOICES]),
-            email=fake.email(),
-            mobile=fake.numerify('##########'),
-            subject=fake.sentence(),
-            message=fake.text(),
-            pin=fake.numerify('######')
-        )
+        if model_name == "contact":
+            MyModel.objects.create(
+                # title=fake.prefix(), 
+                title=fake.random_element(elements=[choice[0] for choice in TITLE_CHOICES]),
+                firstname=fake.first_name(),
+                lastname=fake.last_name(),
+                gender=fake.random_element(elements=[choice[0] for choice in GENDER_CHOICES]),
+                email=fake.email(),
+                mobile=fake.numerify('##########'),
+                subject=fake.sentence(),
+                message=fake.text(),
+                pin=fake.numerify('######')
+            )
+        elif model_name == "blog":
+            MyModel.objects.create(
+                title=fake.sentence(),
+                # url=fake.first_name(),
+                description=fake.text(),
+                image=fake.sentence(),
+                user_id=1
+            )
+        elif model_name == "review":
+            MyModel.objects.create(
+                rated=fake.random_int(min=0, max=5),
+                comment=fake.text(),
+                image=fake.sentence(),
+                user_id=1
+            )
+        
 
-    return HttpResponse(f"Seeded {rec_num} contact(s) successfully!")
-
-# def deleteall_contact(request):
-#     if request.method == "POST":
-#         contact_ids = request.POST.getlist('contact_ids')
-
-#         if(len(contact_ids) > 0):
-#             # Filter the QuerySet to include only the selected IDs and delete them
-#             deleted_count, _ = Contact.objects.filter(id__in=contact_ids).delete()
-
-#             messages.success(request, f"{deleted_count} contact(s) deleted successfully.")
-#         else:
-#             messages.error(request, 'Must select atleast 1 contact to delete.')
-
-#     return redirect('pages:listContactus')
-
-
-
-    
+    return HttpResponse(f"Seeded {rec_num} {model_name}(s) successfully!")

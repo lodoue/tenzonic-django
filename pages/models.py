@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.utils import timezone
 from django.contrib.auth.models import User
+from django.utils.text import slugify
 
 # Define title choices
 TITLE_CHOICES = (
@@ -39,9 +40,6 @@ class BaseModel(models.Model):
         # Optional: set default ordering for all child models
         ordering = ("-created_on",)
 
-    def __str__(self):
-        return self.message
-    
     def was_created_recently(self):
         return self.created_on >= timezone.now() - datetime.timedelta(days=1)
     
@@ -50,12 +48,37 @@ class BaseModel(models.Model):
         # Check if method name 'exclude_fields' exist and its executable
         if hasattr(self, 'exclude_fields') and callable(getattr(self, 'exclude_fields')):
             # Returns field_names excluding field name returned by exclude_fields() method
-            return [(field.verbose_name, getattr(self, field.name)) for field in self._meta.fields if field.name not in self.exclude_fields()]
+            return [(field.name, getattr(self, field.name), field.verbose_name) for field in self._meta.fields if field.name not in self.exclude_fields(self)]
         else:
             return [(field.verbose_name, getattr(self, field.name)) for field in self._meta.fields]
     
     def get_model_name(self):
         return self._meta.verbose_name
+
+# Domain model
+class Domain(BaseModel):
+    class Meta:
+        verbose_name = "Domain"
+        verbose_name_plural = "Domains"
+
+    # Domain fields
+    name = models.CharField(null=True)
+    icon = models.CharField(default='bi bi-images')
+    # Related fields
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+# Service model
+class Service(BaseModel):
+    class Meta:
+        verbose_name = "Service"
+        verbose_name_plural = "Services"
+
+    # Service fields
+    name = models.CharField(null=True)
+    description = models.CharField(null=True)
+    image = models.ImageField(default='default.jpg', upload_to='service_pics')
+    # Related fields
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
 
 # Profile model
 class Profile(BaseModel):
@@ -63,9 +86,10 @@ class Profile(BaseModel):
         verbose_name = "Profile"
         verbose_name_plural = "Profiles"
 
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    # Profile fields
     image = models.ImageField(default='default.jpg', upload_to='profile_pics')
-    
+    # Related fields settings.AUTH_USER_MODEL
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
 
 # Contact model
 class Contact(BaseModel):
@@ -74,8 +98,12 @@ class Contact(BaseModel):
         verbose_name_plural = "Contacts"
 
     def exclude_fields(self):
-        return ('id','title')
+        return ('id','created_on','modified_on','message','firstname','lastname')
+    
+    def __str__(self):
+        return self.message
 
+    # Contact fields
     title = models.CharField(
         max_length=5,
         verbose_name="Title",
@@ -128,7 +156,6 @@ class Contact(BaseModel):
 
     def __str__(self):
         return f"{self.firstname} {self.lastname}"
-    
 
 # Review model
 class Review(BaseModel):
@@ -136,10 +163,15 @@ class Review(BaseModel):
         verbose_name = "Review"
         verbose_name_plural = "Reviews"
 
-    rated = models.PositiveIntegerField(),
-    comment = models.CharField(),
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    image = models.ImageField(default='default.jpg', upload_to='profile_pics')
+    def exclude_fields(self):
+        return ('id','created_on','modified_on')
+
+    # Review fields
+    rated = models.PositiveIntegerField(default=0, verbose_name="Rated")
+    comment = models.CharField(null=True, verbose_name="Comment")
+    image = models.ImageField(default='default.jpg', upload_to='profile_pics', verbose_name="Image")
+    # Related fields
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="User")
 
 # Blog model
 class Blog(BaseModel):
@@ -147,12 +179,38 @@ class Blog(BaseModel):
         verbose_name = "Blog"
         verbose_name_plural = "Blogs"
 
+    def __str__(self):
+        return self.title
+    
+    def exclude_fields(self):
+        return ('id','created_on','modified_on')
+
+    # Blog fields
     title = models.CharField(
-        max_length=5,
-        choices=TITLE_CHOICES
+        verbose_name="Title"
     )
-    message = models.CharField()
-    review = models.ForeignKey(Review, on_delete=models.CASCADE)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    image = models.FileField(upload_to='images', blank=True)
+    url = models.URLField(
+        verbose_name="URL",
+        unique=True, 
+        null=True,
+        blank=True
+    )
+    description = models.CharField(
+        verbose_name="Description"
+    )
+    image = models.FileField(
+        verbose_name="Image",
+        upload_to='images', 
+        blank=True
+    )
+    # Related fields
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="User")
+    reviews = models.ManyToManyField(Review, related_name='blogs', verbose_name="Review")
+
+    def save(self, *args, **kwargs):
+        # Use slugified title as url if its empty then save it
+        if not self.url and self.title:
+            self.url = slugify(self.title)
+        super(Blog, self).save(*args, **kwargs)
+
 

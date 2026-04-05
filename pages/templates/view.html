@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load qr_code %}
+{% load custom_tags %}
 
 {% block content %}
 
@@ -10,24 +11,29 @@
 
             <div class="card shadow border-0 rounded-4">
                 <div class="card-header bg-primary text-white text-center py-3 rounded-top-4">
-                    <h3 class="mb-0">{{ contact.get_model_name }}</h3>
+                    <h3 class="mb-0">{{ module }}</h3>
                 </div>
 
                 <div class="card-body p-4">
-                    {% for name, value in contact.get_fields %}
+                    {% for name, value, verbose in fields %}
                         <div class="row mb-3 border-bottom pb-2">
-                            <div class="col-5 fw-bold">{{ name }}</div>
-                            <div class="col-7 text-muted">{{ value }}</div>
+                            {% if model_name == 'contact' and name == 'title' %}
+                                <div class="col-5 fw-bold">Name</div>
+                                <div class="col-7 text-muted">{{ record.title }} {{ record }}</div>
+                            {% else %}
+                                <div class="col-5 fw-bold">{{ verbose }}</div>
+                                <div class="col-7 text-muted">{{ record|get_obj_attr:name }}</div>
+                            {% endif %}
                         </div>
                     {% endfor %}
                     
-                    {% qr_from_text contact.email size="M" %}
+                    {% qr_from_text record|get_obj_attr:unique_field size="M" %}
                 </div>
 
                 <div class="card-footer bg-white text-center py-3">
-                    <a href="{% url 'pages:listContactus' %}" class="btn btn-primary px-4 me-2">Go to List</a>
-                    <a href="{% url 'pages:contactEdit' contact.id %}" class="btn btn-success px-4 me-2">Edit</a>
-                    <a href="{% url 'pages:deleteContact' contact.id %}" class="btn btn-danger px-4" onclick="return confirm('Are you sure you want to proceed?');">Delete</a>
+                    <a href="{% url 'pages:listModel' model_name %}" class="btn btn-primary px-4 me-2">Go to List</a>
+                    <a href="{% url 'pages:editModel' model_name record.id %}" class="btn btn-success px-4 me-2">Edit</a>
+                    <a href="{% url 'pages:deleteModel' model_name record.id %}" class="btn btn-danger px-4" onclick="return confirm('Are you sure you want to proceed?');">Delete</a>
                 </div>
             </div>
         </div>

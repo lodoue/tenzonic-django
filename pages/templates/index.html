@@ -3,26 +3,26 @@
 {% load django_bootstrap5 %}
 
 {% block content %}
-<form action="{% url 'pages:deleteContact' %}" method="post">
+<form action="{% url 'pages:deleteModel' model_name %}" method="post">
     {% csrf_token %}
     
     <div class="d-flex justify-content-between align-items-center mb-2 p-3">
-        <h3 class="mb-0">Contact Us</h3>
+        <h3 class="mb-0">{{ module }}</h3>
         <div>
-            <a class="btn btn-primary" href="{% url 'pages:createContact' %}">Create New</a>
+            <a class="btn btn-primary" href="{% url 'pages:createModel' model_name %}">Create New</a>
             {% bootstrap_button button_type="submit" content="Delete" onclick="return confirm('Are you sure you want to proceed?');" %}
         </div>
     </div>
 
     {% include "alert.html" %}
     
-    {% include "list.html" with list_obj=list_obj %}
+    {% include list_template with list_obj=list_obj %}
 </form>
 
 <script type="text/javascript">
     function toggleAll(source) {
         // Use querySelectorAll to get all checkboxes with the specific class name
-        checkboxes = document.querySelectorAll('.contact-checkbox');
+        checkboxes = document.querySelectorAll('.list-checkbox');
         
         // Loop through the list and set their checked property to the master's checked property
         for (var i = 0; i < checkboxes.length; i++) {
