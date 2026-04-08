@@ -1,0 +1,12 @@
+{% load custom_tags %}
+
+<!-- templates/search_results.html -->
+<h1>Search Results {{model_name}}</h1>
+
+<ul>
+  {% for obj in list_obj.object_list %}
+    <li>
+      {{ obj.subject }}, {{ obj.firstname }}
+    </li>
+  {% endfor %}
+</ul>

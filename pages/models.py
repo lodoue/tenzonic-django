@@ -100,6 +100,9 @@ class Contact(BaseModel):
     def exclude_fields(self):
         return ('id','created_on','modified_on','message','firstname','lastname')
     
+    def search_fields(self):
+        return ('firstname','lastname')
+    
     def __str__(self):
         return self.message
 
@@ -165,6 +168,9 @@ class Review(BaseModel):
 
     def exclude_fields(self):
         return ('id','created_on','modified_on')
+    
+    def search_fields(self):
+        return ('rated','comment')
 
     # Review fields
     rated = models.PositiveIntegerField(default=0, verbose_name="Rated")
@@ -184,6 +190,9 @@ class Blog(BaseModel):
     
     def exclude_fields(self):
         return ('id','created_on','modified_on')
+    
+    def search_fields(self):
+        return ('title','description')
 
     # Blog fields
     title = models.CharField(

@@ -1,0 +1,6 @@
+<!-- templates/search_home.html -->
+<h1>HomePage</h1>
+
+<form action="{% url 'pages:search_results' model_name %}" method="get">
+  <input name="q" type="text" placeholder="Search...">
+</form>

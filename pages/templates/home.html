@@ -18,11 +18,10 @@
 
         <div class="list-group">
             {% for mod in models %}
-            <div class="list-group-item">
-                <a href="{% url 'pages:listModel' mod 5 %}" class="text-capitalize">{{ mod }}</a>
+            <div class="list-group-item list-group-item-action">
+                <a href="{% url 'pages:listModel' mod.0 per_page %}">{{ mod.1 }}</a>
             </div>
             {% endfor %}
-            
         </div>
     </div>
     {% endblock %}

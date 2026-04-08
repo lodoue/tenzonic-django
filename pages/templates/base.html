@@ -8,13 +8,15 @@
     {% bootstrap_css %}
     {% bootstrap_javascript %}
     <!-- ... other head elements ... -->
-    <link rel="stylesheet" href="{% static 'style.css' %}">
+    <link rel="stylesheet" href="{% static 'navbar.css' %}">
 </head>
 <body>
+    {% include "header.html" %}
+
     <!-- Your content here -->
-    <div class="container">
+    <main>
         {% block content %}
         {% endblock %}
-    </div>
+    </main>
 </body>
 </html>

@@ -4,7 +4,7 @@
 
 <div class="row">
     <div class="col-md-12 mt-3 mb-2">
-      <p>Showing: <span id="recordCount">{{ list_obj.number }}-{{ rec_count }} of {{ list_obj.paginator.count }} records</span></p>
+      <p>Showing: <span id="recordCount">{{ showing_from }}-{{ rec_count }} of {{ list_obj.paginator.count }} records</span></p>
     </div>
   </div>
 <table class="table table-hover table-striped">
@@ -28,7 +28,7 @@
     <tbody>
         {% if not list_obj %}
             <tr>
-                <td colspan="7" class="text-center">No record found</td>
+                <td colspan="{{ fields|length|add:3 }}" class="text-center">No record found</td>
             </tr>
         {% else %}
             {% for obj in list_obj.object_list %}

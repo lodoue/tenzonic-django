@@ -1,61 +1,166 @@
-from django.db.models import F
+from django.db.models import Q, F
 from django.apps import apps
 from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
 from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
-from django.views import generic
+from django.views.generic import TemplateView, ListView
 from .forms import ContactForm, BlogForm, ReviewForm # Import your form class
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.core import serializers
-from .models import Contact, TITLE_CHOICES, GENDER_CHOICES, Blog
+from .models import Contact, TITLE_CHOICES, GENDER_CHOICES, Blog, Review
 from faker import Faker
 
 # Define your app and model name as strings
 app_label = "pages"
-app_models = {"contact": {"name": "Contact", "form": ContactForm}, "blog": {"name": "Blog", "form": BlogForm}, "review": {"name": "Review", "form": ReviewForm}}
+app_models = {"contact": {"name": "Contact", "model": Contact, "form": ContactForm}, "blog": {"name": "Blog", "model": Blog, "form": BlogForm}, "review": {"name": "Review", "model": Review, "form": ReviewForm}}
 
 def index(request):
     # Pass the page object to the template context
-    return render(request, "home.html", {"models": app_models, "name":"name"})
+    return render(request, "home.html", {"models": [('contact', 'Contact'), ('blog', 'Blog'), ('review', 'Review')], "per_page": 5})
 
-def list_model(request, model_name, page=None, count=None):
-    total_count = 0
-    # Retrieve model from passed model_name inside app_models
-    MyModel = apps.get_model(app_label, app_models[model_name]["name"])
-    # Retrieve all contacts order by modified_on in descending order
-    queryset = MyModel.objects.all().order_by('-modified_on')
-
-    if queryset:
-        # Change count to total records if not set
-        if(count is None):
-            count = len(queryset)
-
-        paginator = Paginator(queryset, count)
-
-        try:
-            # Get the Page object for the requested page number
-            list_obj = paginator.page(page)
-        except PageNotAnInteger:
-            # If page is not an integer, deliver first page.
-            list_obj = paginator.page(1)
-        except EmptyPage:
-            # If page is out of range (e.g. 9999), deliver last page.
-            list_obj = paginator.page(paginator.num_pages)
-        
-        total_count = list_obj.number*len(list_obj.object_list)
-    else:
-        print("Queryset is empty")
-        list_obj = None
-
+class ListModelView(TemplateView):
+    model = Contact
+    template_name = 'index.html'
     unique_field = None
-    unique_field_names = [field.name for field in MyModel._meta.get_fields() if field.name is not 'id' and getattr(field, 'unique', False)]
-    if len(unique_field_names) > 0:
-        unique_field = unique_field_names[0]
-    print(list(range(0, 5, 1)))
 
-    # Pass the page object to the template context
-    return render(request, "index.html", {"model_name": model_name, "fields": MyModel.get_fields(MyModel), "unique_field": unique_field, "list_template": "list.html", "module": MyModel._meta.verbose_name, "list_obj": list_obj, "rec_count": total_count, "tags": {'error':'danger','success':'success'}})
+    def get_context_data(self, **kwargs):
+        # Call the base implementation first to get a context
+        context = super().get_context_data(**kwargs)
+        
+        # Access the 'params' from the URL else use the default as defined
+        model_name = self.kwargs.get('model_name')
+        count = self.kwargs.get('count', None)
+        page = self.kwargs.get('page', None)
+
+        # Change the model to the model_name passed in URL
+        self.model = app_models[model_name]['model']
+
+        context['model_name'] = model_name
+        context['fields'] = self.model.get_fields(self.model)
+        context['list_template'] = "list.html"
+        context['module'] = self.model._meta.verbose_name
+        context['tags'] = {'error':'danger','success':'success'}
+        total_count = 0
+        showing_from = 1
+
+        unique_field_names = [field.name for field in self.model._meta.get_fields() if field.name is not 'id' and getattr(field, 'unique', False)]
+        if len(unique_field_names) > 0:
+            self.unique_field = unique_field_names[0]
+            context['unique_field'] = self.unique_field
+
+        queryset = self.model.objects.all().order_by('-modified_on')
+
+        if queryset:
+            # Change count to total records if not set
+            if(count is None):
+                count = len(queryset)
+
+            paginator = Paginator(queryset, count)
+
+            try:
+                # Get the Page object for the requested page number
+                list_obj = paginator.page(page)
+            except PageNotAnInteger:
+                # If page is not an integer, deliver first page.
+                list_obj = paginator.page(1)
+            except EmptyPage:
+                # If page is out of range (e.g. 9999), deliver last page.
+                list_obj = paginator.page(paginator.num_pages)
+            
+            total_count = list_obj.number*len(list_obj.object_list)
+            showing_from = ((list_obj.number*count)-count)+1
+        else:
+            print("Queryset is empty")
+            list_obj = None
+
+        context['rec_count'] = total_count
+        context['list_obj'] = list_obj
+        context['showing_from'] = showing_from
+        return context
+    
+
+class SearchResultsView(ListView):
+    model = Contact
+    template_name = "index.html"
+    unique_field = None
+
+    def get_context_data(self, **kwargs):
+        total_count = 0
+        showing_from = 1
+        # Call the base implementation first to get a context
+        context = super().get_context_data(**kwargs)
+        
+        # Access the 'params' from the URL else use the default as defined
+        model_name = self.kwargs.get('model_name')
+        count = self.kwargs.get('count', None)
+        page = self.kwargs.get('page', None)
+
+        self.model = app_models[model_name]['model']
+        
+        context['model_name'] = model_name
+        context['search_fields'] = self.model.search_fields(self)
+        context['fields'] = self.model.get_fields(self.model)
+
+        queryset = self.get_queryset()
+        if queryset:
+            # Change count to total records if not set
+            if(count is None):
+                count = len(queryset)
+
+            paginator = Paginator(queryset, count)
+
+            try:
+                # Get the Page object for the requested page number
+                list_obj = paginator.page(page)
+            except PageNotAnInteger:
+                # If page is not an integer, deliver first page.
+                list_obj = paginator.page(1)
+            except EmptyPage:
+                # If page is out of range (e.g. 9999), deliver last page.
+                list_obj = paginator.page(paginator.num_pages)
+
+            total_count = list_obj.number*len(list_obj.object_list)
+            showing_from = ((list_obj.number*count)-count)+1
+        else:
+            print("Queryset is empty")
+            list_obj = None
+
+        context['list_obj'] = list_obj
+        context['list_template'] = "list.html"
+        context['module'] = self.model._meta.verbose_name
+        context['unique_field'] = self.get_unique_field()
+        context['tags'] = {'error':'danger','success':'success'}
+        context['search_query'] = self.request.GET.get("q")
+        context['rec_count'] = total_count
+        context['showing_from'] = showing_from
+        return context
+
+    def get_queryset(self):
+        # Access the 'params' from the URL else use the default as defined
+        model_name = self.kwargs.get('model_name')
+        self.model = app_models[model_name]['model']
+        search_fields = self.model.search_fields(self)
+
+        query = self.request.GET.get('q')        
+        conditions = {}
+
+        if query:
+            for field in search_fields:
+                filter_key = f"{field}__icontains"
+                conditions[filter_key] = query
+
+        object_list = self.model.objects.filter(Q(_connector=Q.OR, **conditions))
+        return object_list
+    
+
+    def get_unique_field(self):
+        unique_field_names = [field.name for field in self.model._meta.get_fields() if field.name is not 'id' and getattr(field, 'unique', False)]
+        if len(unique_field_names) > 0:
+            self.unique_field = unique_field_names[0]
+
+        return self.unique_field
+
 
 # Creating new record
 def create_model(request, model_name):
@@ -77,7 +182,7 @@ def create_model(request, model_name):
     else:
         form = app_models[model_name]["form"]()
 
-    return render(request, "create.html", {"form": form, "module": app_models[model_name]['name']})
+    return render(request, "create.html", {"form": form, "module": app_models[model_name]['name'], "model_name": model_name})
 
 # For viewing record by its ID
 def view_model(request, model_name, rec_id):
